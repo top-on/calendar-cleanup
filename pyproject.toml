@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "webdav-purge"
+version = "0.1.0"
+description = "CLI tool to remove old calendar entries on a WebDAV server."
+authors = ["top-on <top-on@posteo.de>"]
+readme = "README.md"
+packages = [{include = "webdav_purge"}]
+
+[tool.poetry.dependencies]
+python = "~3.11"
+webdav4 = "^0.9.8"
+ical = "^6.1.0"
+pytz = "^2023.3.post1"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.27.1"
+notebook = "^7.0.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
