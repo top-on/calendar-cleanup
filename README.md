@@ -6,9 +6,9 @@ It connects to an online calendar in WebDAV format and proposes which entries to
 # Roadmap
 
 - [x] give a more self-explanatory name
-- [ ] extend usecase description in README
-- [ ] refactor: load all data upfront
+- [x] refactor: load all data upfront
 - [ ] batch-approve, and batch remove
+- [ ] extend usecase description in README
 - [ ] first release to pypi
 - [ ] add manual to README
 - [ ] refactor: remove all for-loops

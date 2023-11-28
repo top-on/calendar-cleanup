@@ -8,7 +8,7 @@ from getpass import getpass
 
 import pytz
 from ical.calendar_stream import CalendarParseError, IcsCalendarStream
-from webdav4.client import Client, ResourceNotFound
+from webdav4.client import Client, HTTPError, ResourceNotFound
 
 # events older than this will be deleted
 PURGE_BEFORE = datetime.now(pytz.timezone("Europe/Berlin")) - timedelta(days=30)
@@ -27,24 +27,44 @@ url = input(f"Calendar URL [{default_url}]: ") or default_url
 # create client
 
 client = Client(base_url=url, auth=(user, password))
-client.exists(".")  # verify authentication
+
+print("Verifying authentication...")
+try:
+    client.exists(".")  # verify authentication
+except HTTPError as e:
+    print(f"Authentication with WebDAV server failed: '{e}'. Exiting.")
+    exit(1)
+print("Authentication successful.")
 
 # %%
 # list files
 
-print("\nListing calendar files...")
+print("\nListing WebDAV files...")
 files = client.ls(".")
-print(f"Found {len(files)} event files.")
+print(f"Found {len(files)} WebDAV files.")
+
+filenames = [file["name"] for file in files]
 
 # %%
-for file in files:
-    filename = file["name"]
+# load files into memory
 
-    # load and parse file
+print("\nDownloading WebDAV files...")
+
+file_contents = []
+for filename, file in zip(filenames, files):
+    print(f"Downloading file '{filename}'...")
+    with client.open(filename, "r") as f:
+        file_contents.append(f.read())
+
+print(f"Downloaded {len(file_contents)} WebDAV files.")
+
+
+# %%
+for filename, file_content in zip(filenames, file_contents):
+    # parse file content
     try:
-        print(f"\nLoading file {filename}...")
-        with client.open(filename, "r") as f:
-            calendar = IcsCalendarStream.calendar_from_ics(f.read())
+        print(f"\nParsing ICS file '{filename}'...")
+        calendar = IcsCalendarStream.calendar_from_ics(file_content)
     except ResourceNotFound:
         print(f"File {filename} not found on server.")
         continue
@@ -52,13 +72,14 @@ for file in files:
         print(f"Failed to parse file {filename}: {e}. Next.")
         continue
 
-    # check if file is a todo
+    # skip if file is a todo
     has_event = len(calendar.events) > 0
     has_todos = len(calendar.todos) > 0
     if not has_event and has_todos:
         print(f"File {filename} is a TODO file. Next.")
         continue
 
+    # skip if file contains more than one event
     is_single_event = len(calendar.events) == 1
     if not is_single_event:
         print(f"File {filename} does not contain a single event. Next.")
@@ -67,23 +88,24 @@ for file in files:
     event = calendar.events[0]
     summary = f"{event.dtstart}: {event.summary}"
 
+    # skip if event is repeating
+    is_repeating = event.rrule is not None
+    if is_repeating:
+        print(f"Event '{summary}' is repeating. Next.")
+        continue
+
+    # skip if event is not old enough
     event_start = event.dtstart
     # make sure we have a datetime object
     event_start_dt = datetime.combine(event_start, datetime.min.time())
     # make sure we have a timezone aware datetime object
     event_start_dt_berlin = event_start_dt.astimezone(pytz.timezone("Europe/Berlin"))
-
-    is_repeating = event.rrule is not None
     is_old = event_start_dt_berlin < PURGE_BEFORE
-
     if not is_old:
         print(f"Event '{summary}' is not old enough. Next.")
         continue
-    if is_repeating:
-        print(f"Event '{summary}' is repeating. Next.")
-        continue
 
-    # delete file
+    # ask user if event should be deleted
     if input(f"Delete event '{summary}'? [y/N] ").lower() == "y":
         print("Deleting file...")
         client.remove(filename)
