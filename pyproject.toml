@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "webdav-purge"
+name = "calendar-cleanup"
 version = "0.1.0"
-description = "CLI tool to remove old calendar entries on a WebDAV server."
+description = "Small utility to unclutter old calendar entries from online calendars."
 authors = ["top-on <top-on@posteo.de>"]
 readme = "README.md"
-packages = [{include = "webdav_purge"}]
+packages = [{include = "calendar_cleanup"}]
 
 [tool.poetry.dependencies]
 python = "~3.11"

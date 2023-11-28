@@ -1,10 +1,11 @@
-# WebDAV Purge
+# Calendar Cleanup
 
-CLI tool to remove old calendar entries on a WebDAV server.
+Small utility to unclutter old calendar entries from online calendars.
+It connects to an online calendar in WebDAV format and proposes which entries to remove.
 
 # Roadmap
 
-- [ ] give a more self-explanatory name
+- [x] give a more self-explanatory name
 - [ ] extend usecase description in README
 - [ ] refactor: load all data upfront
 - [ ] batch-approve, and batch remove
