@@ -3,30 +3,31 @@
 # %%
 # importat and config
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from getpass import getpass
 
-import pytz
+from ical.calendar import Calendar
 from ical.calendar_stream import CalendarParseError, IcsCalendarStream
-from webdav4.client import Client, HTTPError, ResourceNotFound
+from webdav4.client import Client, HTTPError
 
 # events older than this will be deleted
-PURGE_BEFORE = datetime.now(pytz.timezone("Europe/Berlin")) - timedelta(days=30)
+PURGE_BEFORE: date = datetime.now().date() - timedelta(days=30)
 
 # %%
 # request credentials
 
-user = input("User: ")
-password = getpass("Password: ")
+print("Please enter the credentials for your WebDAV calendar.")
+username = input("username: ")
+password = getpass("password: ")
 
 # read input for url with a default
-default_url = f"https://posteo.de:8443/calendars/{user}/default"
+default_url = f"https://posteo.de:8443/calendars/{username}/default"
 url = input(f"Calendar URL [{default_url}]: ") or default_url
 
 # %%
-# create client
+# create webdav client
 
-client = Client(base_url=url, auth=(user, password))
+client = Client(base_url=url, auth=(username, password))
 
 print("Verifying authentication...")
 try:
@@ -43,16 +44,16 @@ print("\nListing WebDAV files...")
 files = client.ls(".")
 print(f"Found {len(files)} WebDAV files.")
 
-filenames = [file["name"] for file in files]
+filenames: list[str] = [file["name"] for file in files]
 
 # %%
 # load files into memory
 
-print("\nDownloading WebDAV files...")
+print("\nReading WebDAV files' content...")
 
-file_contents = []
+file_contents: list[str] = []
 for filename, file in zip(filenames, files):
-    print(f"Downloading file '{filename}'...")
+    print(f"Reading content from '{filename}'...")
     with client.open(filename, "r") as f:
         file_contents.append(f.read())
 
@@ -60,56 +61,97 @@ print(f"Downloaded {len(file_contents)} WebDAV files.")
 
 
 # %%
+# parse ICS content to Calendar objects
+
+print("\nParsing ICS files...")
+filenames_calendars: list[tuple[str, Calendar]] = []
 for filename, file_content in zip(filenames, file_contents):
-    # parse file content
     try:
-        print(f"\nParsing ICS file '{filename}'...")
+        print(f"Parsing ICS file '{filename}'...")
         calendar = IcsCalendarStream.calendar_from_ics(file_content)
-    except ResourceNotFound:
-        print(f"File {filename} not found on server.")
-        continue
+        filenames_calendars.append((filename, calendar))
     except CalendarParseError as e:
         print(f"Failed to parse file {filename}: {e}. Next.")
         continue
 
+print(f"Parsed {len(filenames_calendars)} ICS files.")
+
+# %%
+# check which files can be deleted
+
+print("\nChecking which files can be deleted...")
+filenames_summaries_dates_to_delete: list[tuple[str, str, date]] = []
+for filename, calendar in filenames_calendars:
     # skip if file is a todo
     has_event = len(calendar.events) > 0
     has_todos = len(calendar.todos) > 0
     if not has_event and has_todos:
-        print(f"File {filename} is a TODO file. Next.")
+        print(f"File '{filename}' is a TODO file. Next.")
         continue
 
     # skip if file contains more than one event
     is_single_event = len(calendar.events) == 1
     if not is_single_event:
-        print(f"File {filename} does not contain a single event. Next.")
+        print(f"File '{filename}' does not contain a single event. Next.")
         continue
 
     event = calendar.events[0]
-    summary = f"{event.dtstart}: {event.summary}"
+
+    # extract timezone-aware start datetime
+    if type(event.dtstart) is datetime:
+        event_date = event.dtstart.date()
+    elif type(event.dtstart) is date:
+        event_date = event.dtstart
+    else:
+        print(f"Event '{event.summary}' has no start date. Next.")
+        continue
 
     # skip if event is repeating
     is_repeating = event.rrule is not None
     if is_repeating:
-        print(f"Event '{summary}' is repeating. Next.")
+        print(f"Event '{event.summary}' is repeating. Next.")
         continue
 
-    # skip if event is not old enough
-    event_start = event.dtstart
-    # make sure we have a datetime object
-    event_start_dt = datetime.combine(event_start, datetime.min.time())
-    # make sure we have a timezone aware datetime object
-    event_start_dt_berlin = event_start_dt.astimezone(pytz.timezone("Europe/Berlin"))
-    is_old = event_start_dt_berlin < PURGE_BEFORE
-    if not is_old:
-        print(f"Event '{summary}' is not old enough. Next.")
+    is_old_enough = event_date < PURGE_BEFORE
+    if not is_old_enough:
+        print(f"Event '{event.summary}' is not old enough ({event_date}). Next.")
         continue
 
-    # ask user if event should be deleted
-    if input(f"Delete event '{summary}'? [y/N] ").lower() == "y":
-        print("Deleting file...")
-        client.remove(filename)
-    else:
-        print("Not deleting event. Next.")
+    # if we get here, we can ask the user if the event should be deleted
+    filenames_summaries_dates_to_delete.append((filename, event.summary, event_date))
 
-    # %%
+print(f"\nFound {len(filenames_summaries_dates_to_delete)} events that can be deleted.")
+
+
+# %%
+# ask user if event should be deleted
+
+filenames_summaries_dates_sorted = sorted(
+    filenames_summaries_dates_to_delete, key=lambda x: x[2]
+)
+
+if len(filenames_summaries_dates_sorted) == 0:
+    print("\nNo events to delete. Exiting.")
+    exit(0)
+
+# print out all events that can be deleted
+print("\nEvents that can be deleted:")
+for _, summary, event_date in filenames_summaries_dates_sorted:
+    print(f"- {str(event_date)}: {summary}")
+
+
+# %%
+if input("\nDelete listed events? [y/N] ").lower() == "y":
+    print("Deletion confirmed. Deleting events...")
+else:
+    print("Deletion not confirmed. Exiting.")
+    exit(0)
+
+# %%
+# bulk delete files
+
+for filename, summary, _ in filenames_summaries_dates_sorted:  # type: ignore
+    print(f"Deleting event: '{summary}' ...")
+    client.remove(filename)
+
+print("Deletion completed.")
