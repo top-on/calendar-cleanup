@@ -135,7 +135,7 @@ def clean(days: int = 30):
         )
 
     print(
-        f"\nFound {len(filenames_summaries_dates_to_delete)} events that can be deleted."
+        f"\nFound {len(filenames_summaries_dates_to_delete)} events okay for deletion."
     )
 
     # %%
