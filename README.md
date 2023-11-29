@@ -8,7 +8,7 @@ It connects to an online calendar in WebDAV format and proposes which entries to
 - [x] give a more self-explanatory name
 - [x] refactor: load all data upfront
 - [x] batch-approve, and batch remove
-- [ ] self-document with typer
+- [x] self-document with typer
 - [ ] extend usecase description in README
 - [ ] first release to pypi
 - [ ] add manual to README
