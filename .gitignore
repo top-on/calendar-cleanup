@@ -1,5 +1,6 @@
 # python
 *.py[cod]
+/dist
 
 # calendar files
 *.ics
