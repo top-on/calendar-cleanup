@@ -13,7 +13,7 @@ from calendar_cleanup.io.auth import (
     create_webdav_client,
     request_credentials,
 )
-from calendar_cleanup.io.load import list_ics_filepaths
+from calendar_cleanup.io.load import list_ics_filepaths, load_ics_content
 
 # %%
 app = typer.Typer(add_completion=False)
@@ -34,19 +34,10 @@ def clean(days: int = 30) -> None:
     client = create_webdav_client(credentials)
 
     ics_filepaths = list_ics_filepaths(client=client)
-
-    # %%
-    # load files into memory
-
-    print("\nReading WebDAV files' content...")
-
-    file_contents: list[str] = []
-    for filepath in ics_filepaths:
-        print(f"Reading content from '{filepath}'...")
-        with client.open(filepath, "r") as f:
-            file_contents.append(f.read())
-
-    print(f"Downloaded {len(file_contents)} WebDAV files.")
+    file_contents = load_ics_content(
+        ics_filepaths=ics_filepaths,
+        client=client,
+    )
 
     # %%
     # parse ICS content to Calendar objects
