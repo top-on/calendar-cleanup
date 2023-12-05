@@ -5,15 +5,22 @@ from datetime import date, datetime, timedelta
 from ical.calendar import Calendar
 
 
-# check which files can be deleted
 def filter_events_to_clean(
     filenames_calendars: list[tuple[str, Calendar]],
     today: date,
     days: int,
 ) -> list[tuple[str, str, date]]:
-    """TODO."""
+    """Identify events that can be marked for deletion.
+
+    Args:
+        filenames_calendars: tuples with filepath and corresponding Calendar object.
+        today: The current date.
+        days: Number of days before today for an event to be old enough for deletion.
+    Returns:
+        Events marked for deletion, identified by their filepath, event summary, date.
+    """
     # events older than this will be marked for deletion
-    purge_before: date = datetime.now().date() - timedelta(days=days)
+    purge_before: date = today - timedelta(days=days)
 
     print("\nChecking which files can be deleted...")
     filenames_summaries_dates_to_delete: list[tuple[str, str, date]] = []
