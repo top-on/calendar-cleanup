@@ -2,16 +2,9 @@
 
 from getpass import getpass
 
-from pydantic import BaseModel
 from webdav4.client import Client, HTTPError
 
-
-class Credentials(BaseModel):
-    """Credentials for the database."""
-
-    username: str
-    password: str
-    webdav_url: str
+from calendar_cleanup.schema import Credentials
 
 
 def request_credentials() -> Credentials:
