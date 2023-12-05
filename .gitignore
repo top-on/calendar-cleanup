@@ -4,3 +4,6 @@
 
 # calendar files
 *.ics
+
+# ide
+.vscode
