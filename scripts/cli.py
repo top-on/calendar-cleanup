@@ -41,7 +41,7 @@ def clean(days: int = 30) -> None:
         file_contents=file_contents,
     )
 
-    # identify events that can be deleted, exit if none
+    # identify events that can be deleted. if there are none, exit.
     filenames_summaries_dates_to_delete = filter_events_to_clean(
         filenames_calendars=filenames_calendars,
         today=date.today(),
@@ -51,7 +51,7 @@ def clean(days: int = 30) -> None:
         print("\nNo events to delete. Exiting.")
         exit(code=0)
 
-    # check which events to delete, then delete them
+    # check with user if events can be deleted, then delete them
     filenames_summaries_dates_sorted = sort_and_print_events(
         filenames_summaries_dates_to_delete=filenames_summaries_dates_to_delete
     )
