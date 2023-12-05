@@ -4,19 +4,23 @@
 # importat and config
 
 from datetime import date, datetime, timedelta
-from getpass import getpass
 
 import typer
 from ical.calendar import Calendar
 from ical.calendar_stream import CalendarParseError, IcsCalendarStream
-from webdav4.client import Client, HTTPError
+
+from calendar_cleanup.io.auth import (
+    create_webdav_client,
+    request_credentials,
+)
+from calendar_cleanup.io.load import list_ics_filepaths
 
 # %%
 app = typer.Typer(add_completion=False)
 
 
 @app.command()
-def clean(days: int = 30):
+def clean(days: int = 30) -> None:
     """Purge old events from a WebDAV calendar.
 
     Args:\n
@@ -26,38 +30,10 @@ def clean(days: int = 30):
     # events older than this will be deleted
     purge_before: date = datetime.now().date() - timedelta(days=days)
 
-    # %%
-    # request credentials
+    credentials = request_credentials()
+    client = create_webdav_client(credentials)
 
-    print("Please enter the credentials for your WebDAV calendar.")
-    username = input("username: ")
-    password = getpass("password: ")
-
-    # read input for url with a default
-    default_url = f"https://posteo.de:8443/calendars/{username}/default"
-    url = input(f"Calendar URL [{default_url}]: ") or default_url
-
-    # %%
-    # create webdav client
-
-    client = Client(base_url=url, auth=(username, password))
-
-    print("Verifying authentication...")
-    try:
-        client.exists(".")  # verify authentication
-    except HTTPError as e:
-        print(f"Authentication with WebDAV server failed: '{e}'. Exiting.")
-        exit(1)
-    print("Authentication successful.")
-
-    # %%
-    # list files
-
-    print("\nListing WebDAV files...")
-    files = client.ls(".")
-    print(f"Found {len(files)} WebDAV files.")
-
-    filenames: list[str] = [file["name"] for file in files]
+    ics_filepaths = list_ics_filepaths(client=client)
 
     # %%
     # load files into memory
@@ -65,9 +41,9 @@ def clean(days: int = 30):
     print("\nReading WebDAV files' content...")
 
     file_contents: list[str] = []
-    for filename, file in zip(filenames, files):
-        print(f"Reading content from '{filename}'...")
-        with client.open(filename, "r") as f:
+    for filepath in ics_filepaths:
+        print(f"Reading content from '{filepath}'...")
+        with client.open(filepath, "r") as f:
             file_contents.append(f.read())
 
     print(f"Downloaded {len(file_contents)} WebDAV files.")
@@ -77,13 +53,13 @@ def clean(days: int = 30):
 
     print("\nParsing ICS files...")
     filenames_calendars: list[tuple[str, Calendar]] = []
-    for filename, file_content in zip(filenames, file_contents):
+    for filepath, file_content in zip(ics_filepaths, file_contents):
         try:
-            print(f"Parsing ICS file '{filename}'...")
+            print(f"Parsing ICS file '{filepath}'...")
             calendar = IcsCalendarStream.calendar_from_ics(file_content)
-            filenames_calendars.append((filename, calendar))
+            filenames_calendars.append((filepath, calendar))
         except CalendarParseError as e:
-            print(f"Failed to parse file {filename}: {e}. Next.")
+            print(f"Failed to parse file {filepath}: {e}. Next.")
             continue
 
     print(f"Parsed {len(filenames_calendars)} ICS files.")
@@ -93,18 +69,18 @@ def clean(days: int = 30):
 
     print("\nChecking which files can be deleted...")
     filenames_summaries_dates_to_delete: list[tuple[str, str, date]] = []
-    for filename, calendar in filenames_calendars:
+    for filepath, calendar in filenames_calendars:
         # skip if file is a todo
         has_event = len(calendar.events) > 0
         has_todos = len(calendar.todos) > 0
         if not has_event and has_todos:
-            print(f"File '{filename}' is a TODO file. Next.")
+            print(f"File '{filepath}' is a TODO file. Next.")
             continue
 
         # skip if file contains more than one event
         is_single_event = len(calendar.events) == 1
         if not is_single_event:
-            print(f"File '{filename}' does not contain a single event. Next.")
+            print(f"File '{filepath}' does not contain a single event. Next.")
             continue
 
         event = calendar.events[0]
@@ -131,7 +107,7 @@ def clean(days: int = 30):
 
         # if we get here, we can ask the user if the event should be deleted
         filenames_summaries_dates_to_delete.append(
-            (filename, event.summary, event_date)
+            (filepath, event.summary, event_date)
         )
 
     print(
@@ -164,9 +140,9 @@ def clean(days: int = 30):
     # %%
     # bulk delete files
 
-    for filename, summary, _ in filenames_summaries_dates_sorted:  # type: ignore
+    for filepath, summary, _ in filenames_summaries_dates_sorted:  # type: ignore
         print(f"Deleting event: '{summary}' ...")
-        client.remove(filename)
+        client.remove(filepath)
 
     print("Deletion completed.")
 
