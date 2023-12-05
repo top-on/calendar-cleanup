@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- tests on logic of filtering events to delete
+
 ### Changed
 
 - refactor script into functions

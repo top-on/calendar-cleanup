@@ -4,6 +4,40 @@ from datetime import date, datetime, timedelta
 
 from ical.calendar import Calendar
 
+from calendar_cleanup.schema import CalendarEvent
+
+
+# TODO: include into pipeline
+def transform_to_calendar_event(
+    filepath=str,
+    calendar=Calendar,
+) -> CalendarEvent:
+    """
+    Transform a filename and Calendar to a CalendarEvent.
+
+    Args:
+        filepath: file location on WebDAV storage.
+        calendar: corresponding Calendar object.
+    Returns:
+        CalendarEvent object with information needed for filtering and deletion.
+    """
+    event = calendar.events[0]
+
+    # extract timezone-aware start datetime
+    if type(event.dtstart) is datetime:
+        event_date = event.dtstart.date()
+    elif type(event.dtstart) is date:
+        event_date = event.dtstart
+    else:
+        # TODO: return error instead of raising
+        raise ValueError(f"Event '{event.summary}' has no start date.")
+
+    return CalendarEvent(
+        filepath=filepath,
+        summary=event.summary,
+        event_date=event_date,
+    )
+
 
 def filter_events_to_clean(
     filenames_calendars: list[tuple[str, Calendar]],
