@@ -66,9 +66,6 @@ def filter_events_to_clean(
     Returns:
         Events marked for deletion, identified by their filepath, event summary, date.
     """
-    # events older than this will be marked for deletion
-    purge_before: date = today - timedelta(days=days)
-
     print("\nChecking which files can be deleted...")
     filenames_summaries_dates_to_delete: list[tuple[str, str, date]] = []
     for filepath, calendar in filenames_calendars:
@@ -102,6 +99,8 @@ def filter_events_to_clean(
             print(f"Event '{event.summary}' is repeating. Next.")
             continue
 
+        # events older than this will be marked for deletion
+        purge_before: date = today - timedelta(days=days)
         is_old_enough = event_date < purge_before
         if not is_old_enough:
             print(f"Event '{event.summary}' is not old enough ({event_date}). Next.")
