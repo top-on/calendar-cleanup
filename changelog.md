@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- introduce typing and functional syntax at central and final stages of pipeline
 - refactor script into functions
 - add pydantic dependency
 
