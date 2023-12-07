@@ -11,7 +11,7 @@ from calendar_cleanup.schema import CalendarEvent
 def transform_to_calendar_event(
     filepath=str,
     calendar=Calendar,
-) -> CalendarEvent:
+) -> CalendarEvent | ValueError:
     """
     Transform a filename and Calendar to a CalendarEvent.
 
@@ -20,23 +20,36 @@ def transform_to_calendar_event(
         calendar: corresponding Calendar object.
     Returns:
         CalendarEvent object with information needed for filtering and deletion.
+        If event cannot be transformed, a ValueError is *retured*.
     """
-    event = calendar.events[0]
+    # verify that record is no todo
+    if len(calendar.todos) > 0:
+        return ValueError("Is a TODO file.")
 
-    # extract timezone-aware start datetime
+    # verify that .ical file contains a single event
+    if len(calendar.events) != 1:
+        return ValueError("Is not single event.")
+
+    # verify that event is not repeating
+    event = calendar.events[0]
+    if event.rrule is not None:
+        return ValueError("Is repeating.")
+
+    # extract start date
     if type(event.dtstart) is datetime:
         event_date = event.dtstart.date()
     elif type(event.dtstart) is date:
         event_date = event.dtstart
     else:
-        # TODO: return error instead of raising
-        raise ValueError(f"Event '{event.summary}' has no start date.")
+        return ValueError("No start date.")
 
-    return CalendarEvent(
+    # make transformation
+    calendar_event = CalendarEvent(
         filepath=filepath,
         summary=event.summary,
         event_date=event_date,
     )
+    return calendar_event
 
 
 def filter_events_to_clean(

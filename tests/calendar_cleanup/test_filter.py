@@ -3,7 +3,8 @@
 from datetime import datetime, timedelta
 
 import pytest
-from ical.calendar import Calendar, Event
+from ical.calendar import Calendar, Event, Todo
+from ical.types import Frequency, Recur
 
 from calendar_cleanup.filter import filter_events_to_clean, transform_to_calendar_event
 from calendar_cleanup.schema import CalendarEvent
@@ -56,7 +57,56 @@ def test_filter_events_to_clean():
                 event_date=datetime(2022, 8, 31).date(),
             ),
         ),
-        # TODO: add non-happy path tests
+        (
+            Calendar(
+                vevent=[
+                    Event(
+                        summary="Test event",
+                        dtstart=None,
+                    )
+                ],
+            ),
+            ValueError("No start date."),
+        ),
+        (
+            Calendar(
+                vevent=[
+                    Event(
+                        summary="Test event",
+                        dtstart=datetime(2022, 8, 31),
+                    )
+                ],
+                vtodo=[Todo()],
+            ),
+            ValueError("Is a TODO file."),
+        ),
+        (
+            Calendar(
+                vevent=[
+                    Event(
+                        summary="Test event",
+                        dtstart=datetime(2022, 8, 31),
+                        rrule=Recur(freq=Frequency.DAILY, count=3),
+                    )
+                ],
+            ),
+            ValueError("Is repeating."),
+        ),
+        (
+            Calendar(
+                vevent=[
+                    Event(
+                        summary="Test event",
+                        dtstart=datetime(2022, 8, 30),
+                    ),
+                    Event(
+                        summary="Test event",
+                        dtstart=datetime(2022, 8, 31),
+                    ),
+                ],
+            ),
+            ValueError("Is not single event."),
+        ),
     ],
 )
 def test_transform_to_calendar_event(
@@ -70,4 +120,4 @@ def test_transform_to_calendar_event(
         calendar=calendar,
     )
 
-    assert calendar_event == expected
+    assert str(calendar_event) == str(expected)
