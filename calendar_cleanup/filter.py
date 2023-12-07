@@ -7,7 +7,6 @@ from ical.calendar import Calendar
 from calendar_cleanup.schema import CalendarEvent
 
 
-# TODO: include into pipeline
 def transform_to_calendar_event(
     filepath=str,
     calendar=Calendar,
@@ -66,50 +65,35 @@ def filter_events_to_clean(
     Returns:
         Events marked for deletion, identified by their filepath, event summary, date.
     """
-    print("\nChecking which files can be deleted...")
-    filenames_summaries_dates_to_delete: list[tuple[str, str, date]] = []
-    for filepath, calendar in filenames_calendars:
-        # skip if file is a todo
-        has_event = len(calendar.events) > 0
-        has_todos = len(calendar.todos) > 0
-        if not has_event and has_todos:
-            print(f"File '{filepath}' is a TODO file. Next.")
-            continue
+    # transform filenames and calendars to CalendarEvent objects
+    calendar_events: list[CalendarEvent | ValueError] = [
+        transform_to_calendar_event(filepath=filepath, calendar=calendar)
+        for filepath, calendar in filenames_calendars
+    ]
 
-        # skip if file contains more than one event
-        is_single_event = len(calendar.events) == 1
-        if not is_single_event:
-            print(f"File '{filepath}' does not contain a single event. Next.")
-            continue
+    # filter out value errors from transformation
+    calendar_events_valid: list[CalendarEvent] = [
+        calendar_event
+        for calendar_event in calendar_events
+        if isinstance(calendar_event, CalendarEvent)
+    ]
 
-        event = calendar.events[0]
+    # filter out events that are not old enough
+    calendar_events_old_enough: list[CalendarEvent] = [
+        calendar_event
+        for calendar_event in calendar_events_valid
+        if calendar_event.event_date < today - timedelta(days=days)
+    ]
 
-        # extract timezone-aware start datetime
-        if type(event.dtstart) is datetime:
-            event_date = event.dtstart.date()
-        elif type(event.dtstart) is date:
-            event_date = event.dtstart
-        else:
-            print(f"Event '{event.summary}' has no start date. Next.")
-            continue
-
-        # skip if event is repeating
-        is_repeating = event.rrule is not None
-        if is_repeating:
-            print(f"Event '{event.summary}' is repeating. Next.")
-            continue
-
-        # events older than this will be marked for deletion
-        purge_before: date = today - timedelta(days=days)
-        is_old_enough = event_date < purge_before
-        if not is_old_enough:
-            print(f"Event '{event.summary}' is not old enough ({event_date}). Next.")
-            continue
-
-        # if we get here, we can ask the user if the event should be deleted
-        filenames_summaries_dates_to_delete.append(
-            (filepath, event.summary, event_date)
+    # extract filepath, summary, and date for events that are old enough
+    filenames_summaries_dates_to_delete: list[tuple[str, str, date]] = [
+        (
+            calendar_event.filepath,
+            calendar_event.summary,
+            calendar_event.event_date,
         )
-
+        for calendar_event in calendar_events_old_enough
+    ]
     print(f"\nFound {len(filenames_summaries_dates_to_delete)} events for deletion.")
+
     return filenames_summaries_dates_to_delete
