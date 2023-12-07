@@ -55,7 +55,7 @@ def filter_events_to_clean(
     filenames_calendars: list[tuple[str, Calendar]],
     today: date,
     days: int,
-) -> list[tuple[str, str, date]]:
+) -> list[CalendarEvent]:
     """Identify events that can be marked for deletion.
 
     Args:
@@ -63,7 +63,7 @@ def filter_events_to_clean(
         today: The current date.
         days: Number of days before today for an event to be old enough for deletion.
     Returns:
-        Events marked for deletion, identified by their filepath, event summary, date.
+        CalendarEvents marked for deletion.
     """
     # transform filenames and calendars to CalendarEvent objects
     calendar_events: list[CalendarEvent | ValueError] = [
@@ -85,15 +85,5 @@ def filter_events_to_clean(
         if calendar_event.event_date < today - timedelta(days=days)
     ]
 
-    # extract filepath, summary, and date for events that are old enough
-    filenames_summaries_dates_to_delete: list[tuple[str, str, date]] = [
-        (
-            calendar_event.filepath,
-            calendar_event.summary,
-            calendar_event.event_date,
-        )
-        for calendar_event in calendar_events_old_enough
-    ]
-    print(f"\nFound {len(filenames_summaries_dates_to_delete)} events for deletion.")
-
-    return filenames_summaries_dates_to_delete
+    print(f"\nFound {len(calendar_events_old_enough)} events for deletion.")
+    return calendar_events_old_enough
