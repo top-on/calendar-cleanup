@@ -17,9 +17,16 @@ repos:
         language: system
         require_serial: true
         types: [python]
+        stages: [pre-commit]
       - id: mypy
         name: mypy
         entry: mypy
         language: system
         require_serial: true
         types: [python]
+        stages: [pre-commit]
+      - id: pytest
+        name: pytest, all tests
+        entry: pytest tests/
+        language: system
+        stages: [pre-push]
