@@ -24,7 +24,7 @@ repos:
         require_serial: true
         types: [python]
       - id: pytest
-        name: pytest, all tests
-        entry: python -m pytest -v tests/
+        name: pytest
+        entry: pytest tests/
         language: system
         types: [python]
