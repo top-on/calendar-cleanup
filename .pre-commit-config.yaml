@@ -27,7 +27,7 @@ repos:
         stages: [commit]
       - id: pytest
         name: pytest, all tests
-        entry: python -m pytest -v tests/
+        entry: python -m pytest -v .
         args: ["--all-files"]
         language: system
         types: [python]
