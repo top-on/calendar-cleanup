@@ -28,5 +28,6 @@ repos:
       - id: pytest
         name: pytest, all tests
         entry: pytest tests/
+        args: [--all-files]
         language: system
         stages: [pre-push]
