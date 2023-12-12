@@ -17,17 +17,18 @@ repos:
         language: system
         require_serial: true
         types: [python]
-        stages: [pre-commit]
+        stages: [commit]
       - id: mypy
         name: mypy
         entry: mypy
         language: system
         require_serial: true
         types: [python]
-        stages: [pre-commit]
+        stages: [commit]
       - id: pytest
         name: pytest, all tests
-        entry: pytest tests/
+        entry: python -m pytest -v tests/
         args: ["--all-files"]
         language: system
-        stages: [pre-push]
+        types: [python]
+        stages: [push]
