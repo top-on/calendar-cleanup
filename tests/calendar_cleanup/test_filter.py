@@ -33,9 +33,9 @@ def test_filter_events_to_clean():
 
     # assert
     assert len(result) == 1
-    assert result[0][0] == filename
-    assert result[0][1] == event.summary
-    assert result[0][2] == event_date
+    assert result[0].filepath == filename
+    assert result[0].summary == event.summary
+    assert result[0].event_date == event_date
 
 
 @pytest.mark.parametrize(
