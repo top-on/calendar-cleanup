@@ -5,7 +5,7 @@ description = "CLI utility to unclutter old calendar entries from WebDAV calenda
 homepage = "https://github.com/top-on/calendar-cleanup"
 authors = ["top-on <top-on@posteo.de>"]
 readme = "README.md"
-packages = [{include = "calendar_cleanup"}]
+packages = [{ include = "calendar_cleanup" }]
 
 [tool.poetry.dependencies]
 python = "~3.11"
@@ -26,6 +26,21 @@ calendar-cleanup = "scripts.cli:app"
 
 [tool.mypy]
 ignore_missing_imports = true
+
+[tool.ruff]
+fix = true
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    # Pyflakes
+    "F",
+    # Pycodestyle
+    "E",
+    "W",
+    # isort
+    "I001",
+]
 
 [build-system]
 requires = ["poetry-core"]
