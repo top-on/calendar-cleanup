@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - tests on logic of filtering events to delete
 - compatibility with Python 3.12
+- pre-commit hook config
 
 ### Changed
 
