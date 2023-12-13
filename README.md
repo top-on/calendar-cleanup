@@ -19,3 +19,4 @@ CLI utility to unclutter WebDAV calendars by deleting old entries.
 # Roadmap
 
 - [ ] introduce logging at varing verbosity levels, replacing print statements
+- [ ] add sample workflow (low logging verbosity) to README
