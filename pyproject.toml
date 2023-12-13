@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "calendar-cleanup"
-version = "0.3.0"
+version = "0.3.1"
 description = "CLI utility to unclutter old calendar entries from WebDAV calendars."
 homepage = "https://github.com/top-on/calendar-cleanup"
 authors = ["top-on <top-on@posteo.de>"]

@@ -44,7 +44,7 @@ def create_webdav_client(credentials: Credentials) -> Client:
         auth=(credentials.username, credentials.password),
     )
 
-    print("Verifying authentication...")
+    print("\nVerifying authentication...")
     try:
         client.exists(".")  # verify authentication
     except HTTPError as e:
