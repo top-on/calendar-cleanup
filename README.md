@@ -10,7 +10,7 @@ pip install calendar-cleanup
 
 ## Usage example
 
-```bash
+```
 $ calendar-cleanup
 
 Please enter the credentials for your WebDAV calendar.
