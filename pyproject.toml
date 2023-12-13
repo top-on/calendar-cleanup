@@ -23,7 +23,7 @@ pytest = "^7.4.3"
 pre-commit = "^3.6.0"
 
 [tool.poetry.scripts]
-calendar-cleanup = "scripts.cli:app"
+calendar-cleanup = "calendar_cleanup.cli:app"
 
 [tool.mypy]
 ignore_missing_imports = true
