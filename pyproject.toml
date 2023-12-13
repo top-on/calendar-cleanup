@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{ include = "calendar_cleanup" }]
 
 [tool.poetry.dependencies]
-python = "~3.11"
+python = "^3.11"
 webdav4 = "^0.9.8"
 ical = "^6.1.0"
 typer = "^0.9.0"
