@@ -1,5 +1,7 @@
 """Functions for loading data."""
 
+import logging
+
 from ical.calendar import Calendar
 from ical.calendar_stream import CalendarParseError, IcsCalendarStream
 from webdav4.client import Client
@@ -12,9 +14,9 @@ def list_ics_filepaths(client: Client) -> list[str]:
     Returns:
         A list of filenames.
     """
-    print("\nListing WebDAV files...")
+    logging.info("\nListing WebDAV files...")
     files = client.ls(path=".")
-    print(f"Found {len(files)} WebDAV files.")
+    logging.info(f"Found {len(files)} WebDAV files.")
 
     filenames = [
         file["name"]
@@ -42,11 +44,11 @@ def load_ics_content(
 
     file_contents: list[str] = []
     for filepath in ics_filepaths:
-        print(f"Reading content from '{filepath}'...")
+        logging.info(f"Reading content from '{filepath}'...")
         with client.open(filepath, "r") as f:
             file_contents.append(f.read())
 
-    print(f"Downloaded {len(file_contents)} WebDAV files.")
+    print(f"Loaded content from {len(file_contents)} WebDAV files.")
     assert len(file_contents) == len(ics_filepaths), "Input and output not same length."
     return file_contents
 
@@ -70,12 +72,15 @@ def parse_ics_content(
     filenames_calendars: list[tuple[str, Calendar]] = []
     for filepath, file_content in zip(ics_filepaths, file_contents):
         try:
-            print(f"Parsing ICS file '{filepath}'...")
+            logging.info(f"Parsing ICS file '{filepath}'...")
             calendar = IcsCalendarStream.calendar_from_ics(file_content)
             filenames_calendars.append((filepath, calendar))
         except CalendarParseError as e:
-            print(f"Failed to parse file {filepath}: {e}. Next.")
+            logging.info(f"Failed to parse file {filepath}: {e}. Next.")
             continue
 
-    print(f"Parsed {len(filenames_calendars)} ICS files.")
+    print(
+        f"Successfully parsed {len(filenames_calendars)} "
+        f"of {len(ics_filepaths)} ICS files."
+    )
     return filenames_calendars

@@ -1,5 +1,6 @@
 """CLI entrypoint."""
 
+import logging
 from datetime import date
 
 from typer import Option, Typer
@@ -22,8 +23,16 @@ app = Typer(add_completion=False)
 @app.command()
 def clean(
     days: int = Option(
-        default=30,
+        30,
+        "--days",
+        "-d",
         help="Number of days into past from which on to delete events.",
+    ),
+    verbose: bool = Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable detailed output.",
     ),
 ) -> None:
     """CLI utility to unclutter WebDAV calendars by deleting old entries.
@@ -31,6 +40,10 @@ def clean(
     The CLI tools proposes which old entries to remove.
     If the user approves, the events get deleted.
     """
+    # set log level, depending on verbose flag
+    level = logging.INFO if verbose else logging.WARNING
+    logging.basicConfig(level=level, format="%(message)s")
+
     # authenticate with WebDAV server
     credentials = request_credentials()
     client = create_webdav_client(credentials)

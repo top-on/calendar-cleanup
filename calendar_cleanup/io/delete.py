@@ -1,5 +1,6 @@
 """Funcations for deleting event files."""
 
+import logging
 
 from webdav4.client import Client
 
@@ -44,6 +45,6 @@ def confirm_and_delete_events(
         return  # exit if user did not confirm
 
     for calendar_event in calendar_events:
-        print(f"Deleting event: '{calendar_event.summary}' ...")
+        logging.info(f"Deleting event: '{calendar_event.summary}' ...")
         client.remove(calendar_event.filepath)
     print("Deletion completed.")
