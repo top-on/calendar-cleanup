@@ -1,8 +1,8 @@
-"""Purge old events from a calendar."""
+"""CLI entrypoint."""
 
 from datetime import date
 
-import typer
+from typer import Option, Typer
 
 from calendar_cleanup.filter import filter_events_to_clean
 from calendar_cleanup.io.auth import (
@@ -16,15 +16,20 @@ from calendar_cleanup.io.load import (
     parse_ics_content,
 )
 
-app = typer.Typer(add_completion=False)
+app = Typer(add_completion=False)
 
 
 @app.command()
-def clean(days: int = 30) -> None:
-    """Purge old events from a WebDAV calendar.
+def clean(
+    days: int = Option(
+        default=30,
+        help="Number of days into past from which on to delete events.",
+    ),
+) -> None:
+    """CLI utility to unclutter WebDAV calendars by deleting old entries.
 
-    Args:\n
-        days: Number of days into past from which on to delete events. Defaults to 30.
+    The CLI tools proposes which old entries to remove.
+    If the user approves, the events get deleted.
     """
     # authenticate with WebDAV server
     credentials = request_credentials()
